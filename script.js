@@ -159,6 +159,13 @@ async function main() {
     )
 
     const fairPrice = calculateFairPrice(usdIrr, goldOunce)
+    console.log("TGJU raw check", {
+      usdRaw: tgju.current.price_dollar_rl.p,
+      onsRaw: tgju.current.ons.p,
+      usdIrr,
+      goldOunce,
+      fairPrice: Math.round(fairPrice)
+    })
 
     const history = loadHistory()
 
