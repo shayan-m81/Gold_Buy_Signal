@@ -106,10 +106,13 @@ function extractTgjuProfilePrice(html, label) {
 }
 
 async function fetchTGJUProfilePrices() {
-  const [onsHtml, usdHtml] = await Promise.all([
-    fetchText(TGJU_ONS_URL),
-    fetchText(TGJU_USD_URL)
-  ])
+  // const [onsHtml, usdHtml] = await Promise.all([
+  //   fetchText(TGJU_ONS_URL),
+  //   fetchText(TGJU_USD_URL)
+  // ])
+  const onsHtml = await fetchText(TGJU_ONS_URL)
+  await sleep(1500)
+  const usdHtml = await fetchText(TGJU_USD_URL)
 
   const goldOunce = extractTgjuProfilePrice(onsHtml, "Gold ounce")
   const usdIrr = extractTgjuProfilePrice(usdHtml, "USD/IRR")
@@ -233,16 +236,11 @@ async function main() {
       return
     }
     
-    // const [talasea, tgjuPrices] = await Promise.all([
-    //   fetchJSON(TALASEA_API),
-    //   fetchTGJUProfilePrices()
-    // ])
-    const onsHtml = await fetchText(TGJU_ONS_URL)
-    await sleep(1500)
-    const usdHtml = await fetchText(TGJU_USD_URL)
-
+    const [talasea, tgjuPrices] = await Promise.all([
+      fetchJSON(TALASEA_API),
+      fetchTGJUProfilePrices()
+    ])
     const talaseaPrice = parseNumber(talasea.price, "Talasea price")
-
     const marketPrice = talaseaPrice * 10000
     const usdIrr = tgjuPrices.usdIrr
     const goldOunce = tgjuPrices.goldOunce
