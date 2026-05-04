@@ -72,6 +72,25 @@ async function sendTelegram(msg) {
   })
 }
 
+async function fetchJSON(url) {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+      "Accept": "application/json"
+    }
+  })
+
+  const text = await res.text()
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    console.error("❌ Failed to parse JSON from:", url)
+    console.error(text.slice(0, 300))
+    throw new Error("Invalid JSON")
+  }
+}
+
 async function main() {
   try {
     const digikala = await fetchJSON(DIGIKALA_API)
