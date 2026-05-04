@@ -95,7 +95,7 @@ async function main() {
     ])
 
     // 🟡 Market price (Talasea)
-    let marketPrice = Number(talasea.price) * 1000
+    let marketPrice = Number(talasea.price) * 10000
 
     // 🔵 USD + Ounce (TGJU)
     const usdIrr = Number(
@@ -133,10 +133,10 @@ async function main() {
       )
     } else {
       console.log("No signal", {
-        marketPrice,
-        fairPrice,
-        diff: result.diffPercent
-      })
+      marketPrice,
+      fairPrice,
+      diff: result.diffPercent ?? 0
+    })
     }
 
   } catch (err) {
