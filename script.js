@@ -7,28 +7,62 @@ const TGJU_USD_URL = "https://www.tgju.org/profile/price_dollar_rl"
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN
 const CHAT_ID = process.env.CHAT_ID
 
-async function fetchText(url) {
+// async function fetchText(url) {
+//   const finalUrl = `${url}${url.includes("?") ? "&" : "?"}_=${Date.now()}`
+
+//   const res = await fetch(finalUrl, {
+//     cache: "no-store",
+//     headers: {
+//       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
+//       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+//       "Accept-Language": "fa-IR,fa;q=0.9,en-US;q=0.8,en;q=0.7",
+//       "Cache-Control": "no-cache, no-store, max-age=0",
+//       "Pragma": "no-cache",
+//       "Referer": "https://www.tgju.org/"
+//     }
+//   })
+
+//   const text = await res.text()
+
+//   if (!res.ok) {
+//     throw new Error(`HTTP ${res.status} from ${finalUrl}: ${text.slice(0, 300)}`)
+//   }
+
+//   return text
+// }
+
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+async function fetchText(url, retries = 3) {
   const finalUrl = `${url}${url.includes("?") ? "&" : "?"}_=${Date.now()}`
-
-  const res = await fetch(finalUrl, {
-    cache: "no-store",
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language": "fa-IR,fa;q=0.9,en-US;q=0.8,en;q=0.7",
-      "Cache-Control": "no-cache, no-store, max-age=0",
-      "Pragma": "no-cache",
-      "Referer": "https://www.tgju.org/"
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const res = await fetch(finalUrl, {
+      cache: "no-store",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "fa-IR,fa;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Cache-Control": "no-cache, no-store, max-age=0",
+        "Pragma": "no-cache",
+        "Referer": "https://www.tgju.org/"
+      }
+    })
+    const text = await res.text()
+    if (res.ok) {
+      return text
     }
-  })
-
-  const text = await res.text()
-
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} from ${finalUrl}: ${text.slice(0, 300)}`)
+    console.error(`Fetch failed attempt ${attempt}/${retries}`, {
+      url: finalUrl,
+      status: res.status,
+      body: text.slice(0, 200)
+    })
+    if (attempt < retries) {
+      await sleep(3000 * attempt)
+    }
   }
-
-  return text
+  throw new Error(`Failed to fetch ${url} after ${retries} attempts`)
 }
 
 async function fetchJSON(url) {
@@ -199,10 +233,13 @@ async function main() {
       return
     }
     
-    const [talasea, tgjuPrices] = await Promise.all([
-      fetchJSON(TALASEA_API),
-      fetchTGJUProfilePrices()
-    ])
+    // const [talasea, tgjuPrices] = await Promise.all([
+    //   fetchJSON(TALASEA_API),
+    //   fetchTGJUProfilePrices()
+    // ])
+    const onsHtml = await fetchText(TGJU_ONS_URL)
+    await sleep(1500)
+    const usdHtml = await fetchText(TGJU_USD_URL)
 
     const talaseaPrice = parseNumber(talasea.price, "Talasea price")
 
