@@ -234,16 +234,16 @@ async function main() {
       )
     } else {
       console.log("No signal", {
-        marketPrice: Math.round(marketPrice),
-        fairPrice: Math.round(fairPrice),
-        usdIrr,
-        goldOunce,
-        diff: `${result.diffPercent.toFixed(2)}%`,
-        drop: result.dropPercent !== undefined
-          ? `${result.dropPercent.toFixed(2)}%`
-          : null,
-        reason: result.reason
-      })
+      marketPrice,
+      fairPrice,
+      usdIrr,
+      goldOunce,
+      diff: `${result.diffPercent.toFixed(2)}%`,
+      drop: result.dropPercent !== undefined
+        ? `${result.dropPercent.toFixed(2)}%`
+        : null,
+      reason: result.reason
+    })
     }
   } catch (err) {
     console.error("Script failed:", err.message)
