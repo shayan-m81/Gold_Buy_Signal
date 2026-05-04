@@ -73,53 +73,73 @@ async function sendTelegram(msg) {
 }
 
 async function main() {
-  // fetch both APIs
-  const [digikalaRes, tgjuRes] = await Promise.all([
-    fetch(DIGIKALA_API),
-    fetch(TGJU_API)
-  ])
+  try {
+    const digikala = await fetchJSON(DIGIKALA_API)
 
-  const digikala = await digikalaRes.json()
-  const tgju = await tgjuRes.json()
+    let tgju
+    let usdIrr = null
+    let goldOunce = null
 
-  const marketPrice = Number(digikala.gold18.price)
+    try {
+      tgju = await fetchJSON(TGJU_API)
 
-  // ⚠️ correct keys
-  const usdIrr = Number(tgju.current.price_dollar_rl.p.replace(/,/g, ""))
-  const goldOunce = Number(tgju.current.ons.p.replace(/,/g, ""))
+      usdIrr = Number(
+        tgju.current.price_dollar_rl.p.replace(/,/g, "")
+      )
 
-  const fairPrice = calculateFairPrice(usdIrr, goldOunce)
+      goldOunce = Number(
+        tgju.current.ons.p.replace(/,/g, "")
+      )
 
-  let history = loadHistory()
+    } catch (e) {
+      console.log("⚠️ TGJU failed, skipping fair price")
+    }
 
-  history.push({
-    time: Date.now(),
-    marketPrice,
-    fairPrice
-  })
+    const marketPrice = Number(digikala.gold18.price)
 
-  if (history.length > 100) history.shift()
+    if (!usdIrr || !goldOunce) {
+      console.log("Skipping signal (no fair price)")
+      return
+    }
 
-  const result = analyze(history, marketPrice, fairPrice)
+    const fairPrice = calculateFairPrice(usdIrr, goldOunce)
 
-  saveHistory(history)
+    let history = loadHistory()
 
-  if (result.buy) {
-    await sendTelegram(
-      `🚨 ${result.level} BUY SIGNAL\n\n` +
-      `Market: ${marketPrice}\n` +
-      `Fair: ${Math.round(fairPrice)}\n` +
-      `Undervaluation: ${result.diffPercent.toFixed(2)}%\n` +
-      `${result.dropPercent ? `Drop: ${result.dropPercent.toFixed(2)}%\n` : ""}` +
-      `\nReason: ${result.reason}`
-    )
-  } else {
-    console.log("No signal", {
+    history.push({
+      time: Date.now(),
       marketPrice,
-      fairPrice,
-      diff: result.diffPercent
+      fairPrice
     })
+
+    if (history.length > 100) history.shift()
+
+    const result = analyze(history, marketPrice, fairPrice)
+
+    saveHistory(history)
+
+    if (result.buy) {
+      await sendTelegram(
+        `🚨 ${result.level} BUY SIGNAL\n\n` +
+        `Market: ${marketPrice}\n` +
+        `Fair: ${Math.round(fairPrice)}\n` +
+        `Undervaluation: ${result.diffPercent.toFixed(2)}%\n` +
+        `${result.dropPercent ? `Drop: ${result.dropPercent.toFixed(2)}%\n` : ""}` +
+        `\nReason: ${result.reason}`
+      )
+    } else {
+      console.log("No signal", {
+        marketPrice,
+        fairPrice,
+        diff: result.diffPercent
+      })
+    }
+
+  } catch (err) {
+    console.error("🔥 Script failed:", err.message)
   }
 }
+
+main()
 
 main()
