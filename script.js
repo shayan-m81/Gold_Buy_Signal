@@ -181,8 +181,24 @@ async function sendTelegram(msg) {
   }
 }
 
+async function sendTestTelegram() {
+  await sendTelegram(
+    `✅ TEST MESSAGE\n\n` +
+    `Telegram integration works.\n\n` +
+    `Time: ${new Date().toISOString()}`
+  )
+
+  console.log("Telegram test sent")
+}
+
 async function main() {
   try {
+    
+     if (process.env.TEST_TELEGRAM === "true") {
+      await sendTestTelegram()
+      return
+    }
+    
     const [talasea, tgjuPrices] = await Promise.all([
       fetchJSON(TALASEA_API),
       fetchTGJUProfilePrices()
