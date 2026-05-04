@@ -1,10 +1,29 @@
 import fs from "fs"
 
-const DIGIKALA_API = "https://api.digikala.com/non-inventory/v1/prices/"
+const TALASEA_API = "https://api.talasea.ir/api/market/getGoldPrice"
 const TGJU_API = "https://call3.tgju.org/ajax.json"
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN
 const CHAT_ID = process.env.CHAT_ID
+
+async function fetchJSON(url) {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+      "Accept": "application/json"
+    }
+  })
+
+  const text = await res.text()
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    console.error("❌ Invalid JSON from:", url)
+    console.error(text.slice(0, 300))
+    throw new Error("Invalid JSON")
+  }
+}
 
 function loadHistory() {
   try {
@@ -25,9 +44,7 @@ function calculateFairPrice(usdIrr, goldOunce) {
 function analyze(history, marketPrice, fairPrice) {
   const diffPercent = ((fairPrice - marketPrice) / fairPrice) * 100
 
-  if (history.length < 3) {
-    return { buy: false }
-  }
+  if (history.length < 3) return { buy: false }
 
   const prev = history.at(-2).marketPrice
   const dropPercent = ((prev - marketPrice) / prev) * 100
@@ -37,7 +54,6 @@ function analyze(history, marketPrice, fairPrice) {
 
   const isBelowAvg = marketPrice < avg5
 
-  // 🔥 Strong buy
   if (diffPercent >= 5 && dropPercent >= 2 && isBelowAvg) {
     return {
       buy: true,
@@ -48,7 +64,6 @@ function analyze(history, marketPrice, fairPrice) {
     }
   }
 
-  // ⚡ Moderate buy
   if (diffPercent >= 3) {
     return {
       buy: true,
@@ -72,63 +87,24 @@ async function sendTelegram(msg) {
   })
 }
 
-async function fetchJSON(url) {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-      "Accept": "application/json, text/plain, */*",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Referer": "https://www.digikala.com/",
-      "Origin": "https://www.digikala.com"
-    }
-  })
-
-  const text = await res.text()
-
-  if (!res.ok) {
-    console.error("❌ HTTP Error:", res.status, url)
-    console.error(text.slice(0, 300))
-    throw new Error("HTTP error " + res.status)
-  }
-
-  try {
-    return JSON.parse(text)
-  } catch {
-    console.error("❌ Invalid JSON from:", url)
-    console.error(text.slice(0, 300))
-    throw new Error("Invalid JSON")
-  }
-}
-
 async function main() {
   try {
-    const digikala = await fetchJSON(DIGIKALA_API)
+    const [talasea, tgju] = await Promise.all([
+      fetchJSON(TALASEA_API),
+      fetchJSON(TGJU_API)
+    ])
 
-    let tgju
-    let usdIrr = null
-    let goldOunce = null
+    // 🟡 Market price (Talasea)
+    let marketPrice = Number(talasea.price) * 10
 
-    try {
-      tgju = await fetchJSON(TGJU_API)
+    // 🔵 USD + Ounce (TGJU)
+    const usdIrr = Number(
+      tgju.current.price_dollar_rl.p.replace(/,/g, "")
+    )
 
-      usdIrr = Number(
-        tgju.current.price_dollar_rl.p.replace(/,/g, "")
-      )
-
-      goldOunce = Number(
-        tgju.current.ons.p.replace(/,/g, "")
-      )
-
-    } catch (e) {
-      console.log("⚠️ TGJU failed, skipping fair price")
-    }
-
-    const marketPrice = Number(digikala.gold18.price)
-
-    if (!usdIrr || !goldOunce) {
-      console.log("Skipping signal (no fair price)")
-      return
-    }
+    const goldOunce = Number(
+      tgju.current.ons.p.replace(/,/g, "")
+    )
 
     const fairPrice = calculateFairPrice(usdIrr, goldOunce)
 
@@ -167,7 +143,5 @@ async function main() {
     console.error("🔥 Script failed:", err.message)
   }
 }
-
-main()
 
 main()
