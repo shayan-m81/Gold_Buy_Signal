@@ -7,6 +7,15 @@ on:
   schedule:
     - cron: "*/30 * * * *"
   workflow_dispatch:
+    inputs:
+      test_telegram:
+        description: "Send Telegram test message"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 jobs:
   run:
@@ -27,8 +36,10 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
+          TEST_TELEGRAM: ${{ github.event.inputs.test_telegram || 'false' }}
 
       - name: Save history
+        if: ${{ github.event.inputs.test_telegram != 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
