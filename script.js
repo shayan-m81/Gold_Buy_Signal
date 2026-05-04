@@ -95,7 +95,7 @@ async function main() {
     ])
 
     // 🟡 Market price (Talasea)
-    let marketPrice = Number(talasea.price) * 10
+    let marketPrice = Number(talasea.price) * 1000
 
     // 🔵 USD + Ounce (TGJU)
     const usdIrr = Number(
