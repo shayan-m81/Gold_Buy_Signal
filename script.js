@@ -5,7 +5,11 @@ const TGJU_ONS_URL = "https://www.tgju.org/profile/ons"
 const TGJU_USD_URL = "https://www.tgju.org/profile/price_dollar_rl"
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN
-const CHAT_ID = process.env.CHAT_ID
+// const CHAT_ID = process.env.CHAT_ID
+const CHAT_IDS = (process.env.CHAT_IDS || "")
+  .split(",")
+  .map(x => x.trim())
+  .filter(Boolean)
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -167,26 +171,61 @@ function analyze(history, marketPrice, fairPrice) {
   }
 }
 
+// async function sendTelegram(msg) {
+//   if (!TELEGRAM_TOKEN || !CHAT_ID) {
+//     throw new Error("Missing TELEGRAM_TOKEN or CHAT_ID")
+//   }
+
+//   const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json"
+//     },
+//     body: JSON.stringify({
+//       chat_id: CHAT_ID,
+//       text: msg
+//     })
+//   })
+
+//   const text = await res.text()
+
+//   if (!res.ok) {
+//     throw new Error(`Telegram failed: ${res.status} ${text}`)
+//   }
+// }
+
 async function sendTelegram(msg) {
-  if (!TELEGRAM_TOKEN || !CHAT_ID) {
-    throw new Error("Missing TELEGRAM_TOKEN or CHAT_ID")
+  if (!TELEGRAM_TOKEN) {
+    throw new Error("Missing TELEGRAM_TOKEN")
   }
-
-  const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      chat_id: CHAT_ID,
-      text: msg
+  if (CHAT_IDS.length === 0) {
+    throw new Error("Missing CHAT_IDS")
+  }
+  const results = []
+  for (const chatId of CHAT_IDS) {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: msg
+      })
     })
-  })
-
-  const text = await res.text()
-
-  if (!res.ok) {
-    throw new Error(`Telegram failed: ${res.status} ${text}`)
+    const text = await res.text()
+    if (!res.ok) {
+      console.error(`Telegram failed for chat ${chatId}:`, res.status, text)
+      results.push({ chatId, ok: false })
+    } else {
+      console.log(`Telegram sent to chat ${chatId}`)
+      results.push({ chatId, ok: true })
+    }
+    await sleep(500)
+  }
+  const failed = results.filter(x => !x.ok)
+  if (failed.length > 0) {
+    throw new Error(`Telegram failed for ${failed.length}/${CHAT_IDS.length} chats`)
   }
 }
 
