@@ -75,17 +75,26 @@ async function sendTelegram(msg) {
 async function fetchJSON(url) {
   const res = await fetch(url, {
     headers: {
-      "User-Agent": "Mozilla/5.0",
-      "Accept": "application/json"
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "Accept": "application/json, text/plain, */*",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Referer": "https://www.digikala.com/",
+      "Origin": "https://www.digikala.com"
     }
   })
 
   const text = await res.text()
 
+  if (!res.ok) {
+    console.error("❌ HTTP Error:", res.status, url)
+    console.error(text.slice(0, 300))
+    throw new Error("HTTP error " + res.status)
+  }
+
   try {
     return JSON.parse(text)
   } catch {
-    console.error("❌ Failed to parse JSON from:", url)
+    console.error("❌ Invalid JSON from:", url)
     console.error(text.slice(0, 300))
     throw new Error("Invalid JSON")
   }
