@@ -6,24 +6,54 @@ const TGJU_API = "https://call3.tgju.org/ajax.json"
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN
 const CHAT_ID = process.env.CHAT_ID
 
+// async function fetchJSON(url) {
+//   const res = await fetch(url, {
+//     headers: {
+//       "User-Agent": "Mozilla/5.0",
+//       Accept: "application/json"
+//     }
+//   })
+
+//   const text = await res.text()
+
+//   if (!res.ok) {
+//     throw new Error(`HTTP ${res.status} from ${url}: ${text.slice(0, 200)}`)
+//   }
+
+//   try {
+//     return JSON.parse(text)
+//   } catch {
+//     console.error("Invalid JSON from:", url)
+//     console.error(text.slice(0, 300))
+//     throw new Error("Invalid JSON")
+//   }
+// }
+
 async function fetchJSON(url) {
-  const res = await fetch(url, {
+  const finalUrl = `${url}${url.includes("?") ? "&" : "?"}_=${Date.now()}`
+
+  const res = await fetch(finalUrl, {
+    cache: "no-store",
     headers: {
-      "User-Agent": "Mozilla/5.0",
-      Accept: "application/json"
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
+      "Accept": "application/json, text/plain, */*",
+      "Accept-Language": "fa-IR,fa;q=0.9,en-US;q=0.8,en;q=0.7",
+      "Cache-Control": "no-cache, no-store, max-age=0",
+      "Pragma": "no-cache",
+      "Referer": "https://www.tgju.org/"
     }
   })
 
   const text = await res.text()
 
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status} from ${url}: ${text.slice(0, 200)}`)
+    throw new Error(`HTTP ${res.status} from ${finalUrl}: ${text.slice(0, 300)}`)
   }
 
   try {
     return JSON.parse(text)
   } catch {
-    console.error("Invalid JSON from:", url)
+    console.error("Invalid JSON from:", finalUrl)
     console.error(text.slice(0, 300))
     throw new Error("Invalid JSON")
   }
@@ -159,13 +189,17 @@ async function main() {
     )
 
     const fairPrice = calculateFairPrice(usdIrr, goldOunce)
-    console.log("TGJU raw check", {
-      usdRaw: tgju.current.price_dollar_rl.p,
-      onsRaw: tgju.current.ons.p,
-      usdIrr,
-      goldOunce,
-      fairPrice: Math.round(fairPrice)
+    // 
+    console.log("TGJU debug", {
+      dollar_p: tgju.current.price_dollar_rl.p,
+      dollar_time: tgju.current.price_dollar_rl.t_en,
+      dollar_created_at: tgju.current.price_dollar_rl.created_at,
+    
+      ons_p: tgju.current.ons.p,
+      ons_time: tgju.current.ons.t_en,
+      ons_ts: tgju.current.ons.ts
     })
+    // 
 
     const history = loadHistory()
 
