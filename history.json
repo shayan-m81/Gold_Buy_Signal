@@ -1,12 +1,5 @@
 [
   {
-    "time": 1783673101677,
-    "marketPrice": 176470000,
-    "fairPrice": 179561272.13541666,
-    "usdIrr": 1816200,
-    "goldOunce": 4100.19
-  },
-  {
     "time": 1783683423374,
     "marketPrice": 177190000,
     "fairPrice": 179509595.9201389,
@@ -695,6 +688,13 @@
   {
     "time": 1784290736278,
     "marketPrice": 185190000,
+    "fairPrice": 180658444.7337963,
+    "usdIrr": 1886000,
+    "goldOunce": 3972.57
+  },
+  {
+    "time": 1784297317342,
+    "marketPrice": 183440000,
     "fairPrice": 180658444.7337963,
     "usdIrr": 1886000,
     "goldOunce": 3972.57
